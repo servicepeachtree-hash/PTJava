@@ -1,0 +1,28 @@
+:root{
+  --bg:#0a0a0b; --surface:#141416; --border:rgba(255,255,255,.1);
+  --text:#f2f1ef; --dim:#98979f; --pink:#ff7d78; --green:#5bd473;
+}
+*{box-sizing:border-box;}
+body{background:var(--bg); color:var(--text); font-family:Inter,system-ui,sans-serif; margin:0; padding:40px 20px;}
+.box{max-width:420px; margin:0 auto; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:32px;}
+.box.wide{max-width:960px;}
+h1{font-size:22px; margin:0 0 20px;}
+label{display:block; font-size:13px; color:var(--dim); margin:14px 0 6px;}
+input,textarea,select{width:100%; padding:11px 13px; border-radius:9px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:14px; font-family:inherit;}
+button,.btn{margin-top:20px; width:100%; padding:12px; border-radius:9px; border:none; background:var(--pink); color:#fff; font-weight:700; font-size:14px; cursor:pointer; text-align:center; text-decoration:none; display:block;}
+.btn.secondary{background:transparent; border:1px solid var(--border); color:var(--text);}
+.error{background:rgba(255,80,80,.12); border:1px solid rgba(255,80,80,.35); color:#ff8c8c; padding:10px 14px; border-radius:9px; font-size:13px; margin-bottom:10px;}
+.success{background:rgba(91,212,115,.12); border:1px solid rgba(91,212,115,.35); color:var(--green); padding:10px 14px; border-radius:9px; font-size:13px; margin-bottom:10px;}
+a{color:var(--pink);}
+table{width:100%; border-collapse:collapse; font-size:13px; margin-top:16px;}
+th,td{text-align:left; padding:10px; border-bottom:1px solid var(--border);}
+th{color:var(--dim); font-weight:600; text-transform:uppercase; font-size:11px; letter-spacing:.05em;}
+.row{display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;}
+.muted{color:var(--dim); font-size:13px;}
+.pill{display:inline-block; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700;}
+.pill.ok{background:rgba(91,212,115,.15); color:var(--green);}
+.pill.bad{background:rgba(255,125,120,.15); color:var(--pink);}
+.stats{display:flex; gap:16px; margin-bottom:24px; flex-wrap:wrap;}
+.stats .box{flex:1; min-width:160px;}
+.actions{display:flex; gap:12px; flex-wrap:wrap;}
+.actions .btn{width:auto;}
