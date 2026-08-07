@@ -1,0 +1,150 @@
+import { supabaseServer } from '@/lib/supabase/server';
+import Image from 'next/image';
+import SiteNav from '@/components/SiteNav';
+import ProductCarousel from '@/components/ProductCarousel';
+import BrandBackdrop from '@/components/BrandBackdrop';
+import SiteFooter from '@/components/SiteFooter';
+import DiscordSection from '@/components/DiscordSection';
+import BundleCard from '@/components/BundleCard';
+import { loadActiveDiscounts, automaticPercentFor } from '@/lib/discounts';
+import { loadOwnedProductIds } from '@/lib/ownership';
+
+const CATEGORIES = [
+  { id: 'bosses',  name: 'Bosses',              img: '/images/bosses.jpg' },
+  { id: 'builds',  name: 'Builds',               img: '/images/builds.jpg' },
+  { id: 'mobs',    name: 'Mobs',                 img: '/images/mobs.jpg' },
+  { id: 'utility', name: 'Portals & Utilities',  img: '/images/portals.jpg' },
+  { id: 'dungeon', name: 'Dungeon Packs',         img: '/images/dungeon.jpg' },
+];
+
+export default async function HomePage() {
+  const supabase = supabaseServer();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const [counts, featured, newReleases, discounts, ownedIds] = await Promise.all([
+    Promise.all(CATEGORIES.map(async (c) => {
+      const { count } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('category', c.id)
+        .eq('is_active', true);
+      return { id: c.id, count: count ?? 0 };
+    })),
+    supabase.from('products').select('*').eq('is_active', true).eq('is_featured', true).order('sort_order', { ascending: true }).limit(8),
+    supabase.from('products').select('*').eq('is_active', true).order('created_at', { ascending: false }).limit(10),
+    loadActiveDiscounts(supabase),
+    loadOwnedProductIds(supabase, user?.id),
+  ]);
+
+  const countFor = (id: string) => counts.find((c) => c.id === id)?.count ?? 0;
+
+  const { data: bundles } = await supabase.from('bundles').select('*').eq('is_active', true).order('sort_order', { ascending: true });
+  const allBundleProductIds = Array.from(new Set((bundles ?? []).flatMap((b: any) => b.product_ids ?? [])));
+  const { data: bundleProducts } = allBundleProductIds.length > 0
+    ? await supabase.from('products').select('id, name, price_cents, cover_image_url').in('id', allBundleProductIds)
+    : { data: [] as any[] };
+  const bundleProductsMap = new Map((bundleProducts ?? []).map((p: any) => [p.id, p]));
+
+  return (
+    <div className="storefront-root">
+      <BrandBackdrop />
+      <SiteNav active="home" />
+
+      <section className="cat-section wrap">
+        <div className="cat-fill">
+          <div className="cat-grid">
+            <div className="cat-col">
+              <a className="cat-tile" href="/store?category=bosses">
+                <span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" />
+                <div className="cat-art"><Image src="/images/bosses.jpg" alt="Bosses" fill sizes="(max-width: 1000px) 100vw, 50vw" style={{objectFit:"cover"}} priority /></div>
+                <div className="cat-label"><span className="cnt">{countFor('bosses')} packs</span><h3>Bosses →</h3></div>
+              </a>
+            </div>
+            <div className="cat-col">
+              <a className="cat-tile" href="/store?category=builds">
+                <span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" />
+                <div className="cat-art"><Image src="/images/builds.jpg" alt="Builds" fill sizes="(max-width: 1000px) 100vw, 25vw" style={{objectFit:"cover"}} /></div>
+                <div className="cat-label"><span className="cnt">{countFor('builds')} packs</span><h3>Builds →</h3></div>
+              </a>
+              <a className="cat-tile" href="/store?category=mobs">
+                <span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" />
+                <div className="cat-art"><Image src="/images/mobs.jpg" alt="Mobs" fill sizes="(max-width: 1000px) 100vw, 25vw" style={{objectFit:"cover"}} /></div>
+                <div className="cat-label"><span className="cnt">{countFor('mobs')} packs</span><h3>Mobs →</h3></div>
+              </a>
+            </div>
+          </div>
+          <div className="cat-grid" style={{ gridTemplateColumns: '1fr 1.35fr' }}>
+            <a className="cat-tile" href="/store?category=utility">
+              <span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" />
+                <div className="cat-art"><Image src="/images/portals.jpg" alt="Portals & Utilities" fill sizes="(max-width: 1000px) 100vw, 35vw" style={{objectFit:"cover"}} /></div>
+              <div className="cat-label"><span className="cnt">{countFor('utility')} packs</span><h3>Portals &amp; Utilities →</h3></div>
+            </a>
+            <a className="cat-tile" href="/store?category=dungeon">
+              <span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" /><span className="ember" />
+                <div className="cat-art"><Image src="/images/dungeon.jpg" alt="Dungeon Packs" fill sizes="(max-width: 1000px) 100vw, 45vw" style={{objectFit:"cover"}} /></div>
+              <div className="cat-label"><span className="cnt">{countFor('dungeon')} packs</span><h3>Dungeon Packs →</h3></div>
+            </a>
+          </div>
+        </div>
+        <div className="scroll-cue">More below ↓</div>
+      </section>
+
+      {bundles && bundles.length > 0 && (
+        <section className="section wrap">
+          <div className="section-head">
+            <div><span className="eyebrow">Buy together and save</span><h2>Bundles</h2></div>
+          </div>
+          <div className="bundle-grid">
+            {bundles.map((b: any) => (
+              <BundleCard
+                key={b.id}
+                bundle={b}
+                products={(b.product_ids ?? []).map((id: number) => bundleProductsMap.get(id)).filter(Boolean)}
+                ownedIds={ownedIds}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="section wrap">
+        <div className="section-head">
+          <div><span className="eyebrow">Hand-picked</span><h2>Featured</h2></div>
+          <a href="/store" className="view-all">View all →</a>
+        </div>
+        {(featured.data ?? []).length > 0 ? (
+          <ProductCarousel
+            items={(featured.data ?? []).map((p: any) => ({
+              product: p, badge: null,
+              discountPercent: automaticPercentFor(p.id, discounts),
+              owned: ownedIds.has(p.id),
+            }))}
+          />
+        ) : (
+          <p className="muted">Nothing marked as Featured yet — toggle it on from a product's edit page.</p>
+        )}
+      </section>
+
+      <section className="section wrap">
+        <div className="section-head">
+          <div><span className="eyebrow">Shipped this week</span><h2>New releases</h2></div>
+          <a href="/store" className="view-all">View all →</a>
+        </div>
+        <ProductCarousel
+          items={(newReleases.data ?? []).map((p: any) => ({
+            product: p, badge: 'new' as const,
+            discountPercent: automaticPercentFor(p.id, discounts),
+            owned: ownedIds.has(p.id),
+          }))}
+        />
+        {(!newReleases.data || newReleases.data.length === 0) && (
+          <p className="muted">Nothing here yet.</p>
+        )}
+      </section>
+
+      <DiscordSection />
+
+      <SiteFooter />
+    </div>
+  );
+}
